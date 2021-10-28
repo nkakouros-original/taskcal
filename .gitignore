@@ -1,0 +1,4 @@
+.coverage
+coverage.xml
+*.ics
+.pytest_cache
