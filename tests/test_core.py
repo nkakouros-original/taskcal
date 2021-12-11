@@ -1,45 +1,19 @@
 #!/usr/bin/env python
 
+# TODO
+# use fixtures for tw loading
 
 import datetime
-import glob
 import os
 import sys
 
-sys.path.insert(0, "./src/")
-import shutil
-
 import pytest
-import tasklib
 from icalendar import Calendar
+
+from .conftest import tw_dir
+
+sys.path.insert(0, "./src/")
 from taskcal import Taskcal, date_associations, priorities, simple_associations
-
-tw_dir = ".tmp"
-tw = tasklib.TaskWarrior(data_location=tw_dir)
-
-
-def teardown_module():
-    shutil.rmtree(tw_dir)
-
-
-def create_task(task: dict = None, purge=True):
-    task = task or {}
-
-    if purge:
-        files = glob.glob(tw_dir + "/*")
-        for f in files:
-            try:
-                shutil.rmtree(f)
-            except NotADirectoryError:
-                os.remove(f)
-
-    if not task:
-        return
-
-    tw_task = tasklib.Task(tw, **task)
-    tw_task.save()
-
-    return tw_task
 
 
 def compare(task, todo):
@@ -97,7 +71,9 @@ def test_failed_initialization():
     )
 
 
-def test_successful_initialization():
+def test_successful_initialization(tw):
+    tw()
+
     with pytest.raises(TypeError) as exception:
         Taskcal(tw_data_dir="path", tw_rc="path")
     assert (
@@ -114,8 +90,8 @@ def test_successful_initialization():
     assert tc.tw.config["data.location"] == tw_dir + "/subfolder"
 
 
-def test_empty_calendar_when_no_tasks():
-    create_task()
+def test_empty_calendar_when_no_tasks(tw):
+    tw()
 
     tc = Taskcal(tw_data_dir=tw_dir)
 
@@ -125,8 +101,8 @@ def test_empty_calendar_when_no_tasks():
     assert "X-WR-CALNAME" not in tc.calendars
 
 
-def test_task_with_simple_associations():
-    task = create_task(
+def test_task_with_simple_associations(tw):
+    task = tw(
         {"description": "one task", "tags": ["tag1", "tag2"], "priority": "H"}
     )
 
@@ -137,17 +113,17 @@ def test_task_with_simple_associations():
     compare(task, tc.calendars["<noname>"].subcomponents[0])
 
 
-def test_priority_association():
+def test_priority_association(tw):
     for twp, icalp in priorities.items():
-        create_task({"description": "task", "priority": twp})
+        tw({"description": "task", "priority": twp})
 
         tc = Taskcal(tw_data_dir=tw_dir)
 
         tc.calendars["<noname>"].subcomponents[0]["priority"] == icalp
 
 
-def test_task_with_changing_status():
-    task = create_task({"description": "task"})
+def test_task_with_changing_status(tw):
+    task = tw({"description": "task"})
 
     tc = Taskcal(tw_data_dir=tw_dir)
 
@@ -166,10 +142,10 @@ def test_task_with_changing_status():
     assert tc.calendars["<noname>"].subcomponents[0]["status"] == "cancelled"
 
 
-def test_task_with_dependencies():
-    task1 = create_task({"description": "task1"})
-    task2 = create_task({"description": "task2"}, purge=False)
-    task3 = create_task({"description": "task3"}, purge=False)
+def test_task_with_dependencies(tw):
+    task1 = tw({"description": "task1"})
+    task2 = tw({"description": "task2"})
+    task3 = tw({"description": "task3"})
     task3["depends"] = set([task1, task2])
     task3.save()
 
@@ -185,10 +161,8 @@ def test_task_with_dependencies():
     )
 
 
-def test_task_with_project():
-    task = create_task(
-        {"description": "task with project", "project": "project1"}
-    )
+def test_task_with_project(tw):
+    task = tw({"description": "task with project", "project": "project1"})
 
     tc = Taskcal(tw_data_dir=tw_dir)
 
@@ -198,13 +172,13 @@ def test_task_with_project():
     assert len(tc.calendars["project1"].subcomponents) == 1
 
 
-def test_task_with_dates():
+def test_task_with_dates(tw):
     wait = datetime.datetime.now() + datetime.timedelta(1)
     scheduled = datetime.datetime.now() + datetime.timedelta(2)
     due = datetime.datetime.now() + datetime.timedelta(3)
     until = datetime.datetime.now() + datetime.timedelta(4)
 
-    task = create_task(
+    task = tw(
         {
             "description": "task3",
             "wait": wait,
@@ -219,8 +193,8 @@ def test_task_with_dates():
     compare(task, tc.calendars["<noname>"].subcomponents)
 
 
-def test_default_filter():
-    task = create_task({"description": "task"})
+def test_default_filter(tw):
+    task = tw({"description": "task"})
     tc = Taskcal(tw_data_dir=tw_dir)
 
     assert len(tc.calendars["<noname>"].subcomponents) == 1
@@ -230,8 +204,8 @@ def test_default_filter():
     assert len(tc.calendars["<noname>"].subcomponents) == 1
 
 
-def test_overriding_filter():
-    task = create_task({"description": "task"})
+def test_overriding_filter(tw):
+    task = tw({"description": "task"})
     tc = Taskcal(tw_data_dir=tw_dir, filter="status:pending")
 
     assert len(tc.calendars["<noname>"].subcomponents) == 1
@@ -241,23 +215,20 @@ def test_overriding_filter():
     assert len(tc.calendars["<noname>"].subcomponents) == 0
 
 
-def test_ics_file_generation():
-    task1 = create_task({"description": "task 1", "project": "project1"})
-    task2 = create_task(
-        {"description": "task 2", "project": "project1"}, purge=False
-    )
+def test_ics_file_generation(tw):
+    task1 = tw({"description": "task 1", "project": "project1"})
+    task2 = tw({"description": "task 2", "project": "project1"})
 
-    task3 = create_task(
+    task3 = tw(
         {
             "description": "task3",
             "project": "project1",
         },
-        purge=False,
     )
     task3["depends"] = set([task1, task2])
     task3.save()
 
-    task4 = create_task({"description": "task 1"}, purge=False)
+    task4 = tw({"description": "task 1"})
 
     os.environ["TASKDATA"] = tw_dir
 
@@ -283,8 +254,8 @@ def test_ics_file_generation():
     compare(task4, ics.walk(name="vtodo")[0])
 
 
-def test_output_folder_option():
-    task = create_task({"description": "task 1", "project": "project1"})
+def test_output_folder_option(tw):
+    task = tw({"description": "task 1", "project": "project1"})
 
     import runpy
     import sys

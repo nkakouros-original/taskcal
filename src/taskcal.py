@@ -1,13 +1,8 @@
 #!/usr/bin/env python
 
 # TODO
-# start-end dates
-#   full day events (no time)
-#   if no end time, start date/time say it all
-# what about alarms?
 # set custom prodid
-# task annotations to attachments/comments
-# recurrence
+# apply tw filter in Taskcal's constructor already
 
 import os
 from collections import namedtuple
@@ -62,6 +57,16 @@ class Taskcal:
         tw_data_dir: str = None,
         filter: str = "status.any:",
     ) -> None:
+
+        # When tasklib runs taskwarrior commands, it overrides the data.location
+        # settings if the user sets it to a custom value in the TaskWarrior
+        # constructor. It also sets TASKRC to a custom value if the user sets
+        # that too in the constructor. If only one of the two (or none of the
+        # two) is set by the user, the taskwarrior command will do its own
+        # resolution of the data location based on, among others, the env
+        # variables TASKDATA and TASKRC. To be sure that when I use
+        # `tw_data_dir` or `tw_rc` in this constructor I will always use the
+        # intended path, I unset these env variables.
         os.environ.pop("TASKDATA", None)
         os.environ.pop("TASKRC", None)
 
@@ -122,6 +127,7 @@ class Taskcal:
             if calname == "<noname>":
                 continue
             calendar.add("X-WR-CALNAME", calname)
+            calendar.add("NAME", calname)
 
         return dict(calendars)
 
