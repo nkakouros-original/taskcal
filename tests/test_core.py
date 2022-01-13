@@ -1,8 +1,5 @@
 #!/usr/bin/env python
 
-# TODO
-# use fixtures for tw loading
-
 import datetime
 import os
 import sys

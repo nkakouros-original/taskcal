@@ -116,7 +116,7 @@ class Taskcal:
             if task["priority"]:
                 todo.add("priority", priorities.get(task["priority"]))
 
-            todo.add("status", self.get_tw_task_status(task))
+            todo.add("status", self.tw_status_to_ics_status(task))
 
             for dependency in task["depends"] or []:
                 todo.add("related-to", dependency["uuid"])
@@ -132,7 +132,7 @@ class Taskcal:
         return dict(calendars)
 
     @staticmethod
-    def get_tw_task_status(task: Task) -> str:
+    def tw_status_to_ics_status(task: Task) -> str:
         if task.active:
             return "in-process"
         elif task.completed:
