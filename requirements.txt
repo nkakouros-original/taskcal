@@ -2,3 +2,10 @@ tasklib
 icalendar
 flask
 gevent
+pyyaml
+caldav
+pytest-mock
+
+# separate these
+pytest
+pytest-cov

@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 
+import pathlib
 import shutil
 
 import pytest
 import tasklib
 
+# TODO use tmp_dir or sth else
 tw_dir = ".tmp"
 
 
@@ -21,3 +23,8 @@ def tw():
     yield _create_task
 
     shutil.rmtree(tw_dir)
+
+
+@pytest.fixture
+def project_root():
+    return pathlib.Path(__file__).resolve().parent.parent

@@ -141,28 +141,3 @@ class Taskcal:
             return "cancelled"
         else:  # pending/waiting
             return "needs-action"
-
-
-if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "-o",
-        "--output-folder",
-        type=str,
-        help="folder to generate ics files in",
-        default=".",
-    )
-    args = parser.parse_args()
-
-    output_folder = os.path.realpath(args.output_folder)
-    os.makedirs(output_folder, exist_ok=True)
-
-    tw_data_location = os.getenv("TASKDATA", "~/.task")
-
-    tc = Taskcal(tw_data_dir=tw_data_location)
-
-    for calendar, content in tc.calendars.items():
-        with open(f"{output_folder}/{calendar}.ics", "wb") as f:
-            f.write(content.to_ical())

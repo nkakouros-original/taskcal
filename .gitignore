@@ -2,3 +2,4 @@
 coverage.xml
 *.ics
 .pytest_cache
+venv
