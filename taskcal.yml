@@ -8,7 +8,7 @@ outputs:
 
   - name: WebDAV output
     type: caldav
-    host: https://cloud.kakouros.net/remote.php/dav
-    username: nikos
-    password: 'BT3YK-WqfbH-ixCBH-Kt4KR-PPRSX'
+    host: https://my-endpoint
+    username: user
+    password: 'app-password'
     enabled: true
